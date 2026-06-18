@@ -671,47 +671,9 @@ function parseMarkdownFile(content, filename) {
 // 2. 分类逻辑
 // ========================================
 // 从文章中提取所有标签，去重
-var allTags = [];
-posts.forEach(function(p) {
-    p.tags.forEach(function(t) {
-        if (allTags.indexOf(t) === -1) allTags.push(t);
-    });
-});
-allTags.sort();
 
-// 渲染分类列表
-var categoryList = document.getElementById('categoryList');
-var categoryLabel = document.getElementById('categoryLabel');
 
-// 先清空
-categoryList.innerHTML = '';
 
-// 添加“全部”
-var allLi = document.createElement('li');
-allLi.className = 'active';
-allLi.textContent = '全部文章';
-allLi.dataset.tag = 'all';
-allLi.addEventListener('click', function() {
-    filterPosts('all');
-});
-categoryList.appendChild(allLi);
-
-// 添加每个标签
-allTags.forEach(function(tag) {
-    var li = document.createElement('li');
-    li.textContent = tag;
-    li.dataset.tag = tag;
-    // 计算该标签下的文章数
-    var count = posts.filter(function(p) { return p.tags.indexOf(tag) !== -1; }).length;
-    var countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = count;
-    li.appendChild(countSpan);
-    li.addEventListener('click', function() {
-        filterPosts(tag);
-    });
-    categoryList.appendChild(li);
-});
 
 // 当前选中的分类
 var currentCategory = 'all';
@@ -735,44 +697,57 @@ function filterPosts(tag) {
 
 // 修改渲染函数，增加过滤参数
 function renderPosts(tag) {
-    var filtered = window.posts;
-    if (tag && tag !== 'all') {
-        filtered = posts.filter(function(p) {
-            return p.tags.indexOf(tag) !== -1;
+    // 动态生成分类列表
+    var categoryList = document.getElementById('categoryList');
+    var categoryLabel = document.getElementById('categoryLabel');
+    var allTags = [];
+    if (window.posts) {
+        window.posts.forEach(function(p) {
+            p.tags.forEach(function(t) {
+                if (allTags.indexOf(t) === -1) allTags.push(t);
+            });
         });
     }
-    var grid = document.getElementById('postGrid');
+    allTags.sort();
     
-    // 清空网格
-    grid.innerHTML = '';
-    // 如果没文章
-    if (filtered.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,240,0.2);padding:40px 0;">暂无该分类下的文章</div>';
-        return;
-    }
-    // 渲染每篇文章（用之前的 card 渲染逻辑）
-    filtered.forEach(function(post) {
-        var card = document.createElement('div');
-        card.className = 'post-card';
-        card.dataset.id = post.id;
-        card.innerHTML = `
-            <div class="post-date">${post.date}</div>
-            <div class="post-title">${post.title}</div>
-            <div class="post-tags">${post.tags.map(function(t) { return '<span>' + t + '</span>'; }).join('')}</div>
-            <div class="post-excerpt">${post.excerpt}</div>
-            <div class="read-more">阅读全文 →</div>
-        `;
-        card.addEventListener('click', function() {
-            openDetail(post.id);
-        });
-        grid.appendChild(card);
+    categoryList.innerHTML = '';
+    // 添加“全部”
+    var allLi = document.createElement('li');
+    allLi.className = 'active';
+    allLi.textContent = '全部文章';
+    allLi.dataset.tag = 'all';
+    allLi.addEventListener('click', function() { filterPosts('all'); });
+    categoryList.appendChild(allLi);
+    
+    allTags.forEach(function(tag) {
+        var li = document.createElement('li');
+        li.textContent = tag;
+        li.dataset.tag = tag;
+        var count = window.posts ? window.posts.filter(function(p) { return p.tags.indexOf(tag) !== -1; }).length : 0;
+        var countSpan = document.createElement('span');
+        countSpan.className = 'count';
+        countSpan.textContent = count;
+        li.appendChild(countSpan);
+        li.addEventListener('click', function() { filterPosts(tag); });
+        categoryList.appendChild(li);
     });
+    
+    // 更新当前分类标签
+    if (tag === 'all') {
+        categoryLabel.textContent = '全部文章';
+    } else {
+        categoryLabel.textContent = '分类：' + tag;
+    }
+    
+    // 原有的过滤和渲染逻辑
+    var filtered = window.posts || [];
+    // ...
 }
 
 // 把原先渲染文章列表的代码（`posts.forEach` 那段）删掉，改成调用 renderPosts('all')
 // 也就是在 posts 数组定义之后，直接执行：
 
-loadPosts();
+
 
 
 
@@ -787,7 +762,7 @@ loadPosts();
         var detailContent = document.getElementById('detailContent');
 
         function openDetail(id) {
-            var post = posts.find(function(p) { return p.id === id; });
+            var post = window.posts.find(function(p) { return p.id === id; });
             if (!post) return;
 
             detailDate.textContent = post.date;
@@ -816,6 +791,7 @@ loadPosts();
                 closeDetailFn();
             }
         });
+        loadPosts();
         
     </script>
 </body>
