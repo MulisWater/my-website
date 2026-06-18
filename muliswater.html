@@ -540,7 +540,7 @@ function loadPosts() {
         .then(function(data) {
             posts = data;
             // 数据加载完成后，初始化分类和渲染
-            initCategory();
+            
             renderPosts('all');
         })
         .catch(function(error) {
@@ -625,6 +625,8 @@ function renderPosts(tag) {
             return p.tags.indexOf(tag) !== -1;
         });
     }
+    var grid = document.getElementById('postGrid');
+    
     // 清空网格
     grid.innerHTML = '';
     // 如果没文章
