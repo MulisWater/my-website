@@ -617,6 +617,9 @@ function parseMarkdownFile(content, filename) {
     var plainText = body.replace(/\n/g, ' ').replace(/#/g, '');
     excerpt = plainText.substring(0, 60) + (plainText.length > 60 ? '...' : '');
     
+    // 在 return 前添加
+    var htmlContent = marked.parse(body);
+
     return {
         id: Date.now() + Math.random(),
         title: title,
@@ -629,42 +632,7 @@ function parseMarkdownFile(content, filename) {
             
             
 
-function parseMarkdownFile(content, filename) {
-    // 解析 front matter（--- 包裹的部分）
-    var frontMatter = {};
-    var body = content;
-    var match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-    
-    if (match) {
-        // 解析 YAML 格式的 front matter
-        var yamlLines = match[1].split('\n');
-        yamlLines.forEach(function(line) {
-            var colonIndex = line.indexOf(':');
-            if (colonIndex > 0) {
-                var key = line.substring(0, colonIndex).trim();
-                var value = line.substring(colonIndex + 1).trim();
-                frontMatter[key] = value;
-            }
-        });
-        body = match[2].trim();
-    }
-    
-    // 从文件名提取日期（如果 front matter 没有日期）
-    var date = frontMatter.date || filename.substring(0, 10);
-    
-    // 用 marked 解析 Markdown 为 HTML
-    var htmlContent = marked.parse(body);
-    
-    return {
-        id: Date.now() + Math.random(),
-        title: frontMatter.title || filename.replace(/\.md$/, ''),
-        date: date,
-        tags: frontMatter.tags ? frontMatter.tags.split(',').map(function(t) { return t.trim(); }) : ['未分类'],
-        excerpt: frontMatter.excerpt || body.substring(0, 60).replace(/\n/g, ' ') + '...',
-        content: htmlContent,
-        rawContent: body
-    };
-}
+
         var grid = document.getElementById('postGrid');
 
         // ========================================
@@ -695,11 +663,13 @@ function filterPosts(tag) {
     renderPosts(tag);
 }
 
+var categoryList = document.getElementById('categoryList');
+    var categoryLabel = document.getElementById('categoryLabel');
+    
 // 修改渲染函数，增加过滤参数
 function renderPosts(tag) {
     // 动态生成分类列表
-    var categoryList = document.getElementById('categoryList');
-    var categoryLabel = document.getElementById('categoryLabel');
+    
     var allTags = [];
     if (window.posts) {
         window.posts.forEach(function(p) {
@@ -741,6 +711,30 @@ function renderPosts(tag) {
     
     // 原有的过滤和渲染逻辑
     var filtered = window.posts || [];
+    var grid = document.getElementById('postGrid');
+        grid.innerHTML = '';
+
+if (filtered.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.2);padding:40px 0;">暂无文章</div>';
+    return;
+}
+
+filtered.forEach(function(post) {
+    var card = document.createElement('div');
+    card.className = 'post-card';
+    card.dataset.id = post.id;
+    card.innerHTML = `
+        <div class="post-date">${post.date}</div>
+        <div class="post-title">${post.title}</div>
+        <div class="post-tags">${post.tags.map(function(t) { return '<span>' + t + '</span>'; }).join('')}</div>
+        <div class="post-excerpt">${post.excerpt}</div>
+        <div class="read-more">阅读全文 →</div>
+    `;
+    card.addEventListener('click', function() {
+        openDetail(post.id);
+    });
+    grid.appendChild(card);
+});
     // ...
 }
 
