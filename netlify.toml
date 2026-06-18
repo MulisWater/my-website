@@ -1,0 +1,7 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/_posts/*"
+  to = "/_posts/:splat"
+  status = 200
