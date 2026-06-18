@@ -1,0 +1,28 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "posts"
+    label: "文章管理"
+    label_singular: "文章"
+    description: "管理博客文章列表"
+    files:
+      - name: "posts-list"
+        label: "所有文章"
+        file: "posts.json"  # 指向根目录的 posts.json
+        fields:
+          - label: "文章列表"
+            name: "body"
+            widget: "list"
+            summary: "{{fields.title}} ({{fields.date}})"
+            fields:
+              - {label: "文章ID", name: "id", widget: "number", default: 1, value_type: "int"}
+              - {label: "标题", name: "title", widget: "string", default: "新文章标题"}
+              - {label: "发布日期", name: "date", widget: "datetime", default: "", format: "YYYY-MM-DD"}
+              - {label: "标签", name: "tags", widget: "list", default: ["生活", "思考"], allow_add: true}
+              - {label: "摘要", name: "excerpt", widget: "text", default: "这是一段摘要..."}
+              - {label: "正文内容", name: "content", widget: "text", default: "在这里写正文...\n支持换行。"}
