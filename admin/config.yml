@@ -12,11 +12,16 @@ media_library:
 
 collections:
   - name: "posts"
-    label: "文章"
-    folder: "_posts"
-    create: true
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
-    fields:
-      - {label: "标题", name: "title", widget: "string"}
-      - {label: "日期", name: "date", widget: "datetime"}
-      - {label: "正文", name: "body", widget: "markdown"}
+    label: "文章管理"
+    files:
+      - name: "posts-list"
+        label: "所有文章"
+        file: "posts.json"
+        fields:
+          - label: "文章列表"
+            name: "body"
+            widget: "list"
+            fields:
+              - {label: "标题", name: "title", widget: "string"}
+              - {label: "日期", name: "date", widget: "datetime"}
+              - {label: "正文", name: "content", widget: "text"}
