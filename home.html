@@ -6,6 +6,25 @@
     <title>阿水的小窝</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet" />
     <style>
+
+        /* ===== 漂浮星光粒子 ===== */
+@keyframes floatStar {
+    0% { transform: translateY(0px) translateX(0px); opacity: 0.15; }
+    50% { transform: translateY(-25px) translateX(12px); opacity: 0.7; }
+    100% { transform: translateY(0px) translateX(0px); opacity: 0.15; }
+}
+
+.star-particle {
+    position: fixed;
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    filter: blur(1px);
+    pointer-events: none;
+    z-index: 0;
+    animation: floatStar 10s infinite ease-in-out;
+}
         /* ===== 全局重置 ===== */
         * {
             margin: 0;
@@ -655,9 +674,79 @@
                 max-width: 160px;
             }
         }
+
+        /* ===== 鼠标光晕 ===== */
+#cursor-glow {
+    position: fixed;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(249, 217, 118, 0.20) 0%, rgba(160, 120, 255, 0.06) 45%, transparent 70%);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    will-change: left, top;
+}
+
+/* ===== 小纸条优化 ===== */
+
+/* 纸条计数 */
+.note-count {
+    display: inline-block;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 300;
+    color: rgba(255, 255, 240, 0.30);
+    letter-spacing: 1px;
+}
+
+.note-count span {
+    color: #f9d976;
+    font-weight: 600;
+}
+
+/* 打字光标闪烁 */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.cursor-blink {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: #f9d976;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.7s step-end infinite;
+}
+
+/* 纸条飘落动画 */
+@keyframes paperFall {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.92) rotate(-3deg);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(4px) scale(1.01) rotate(1deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+    }
+}
+
+.note-display {
+    animation: paperFall 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
     </style>
 </head>
 <body>
+
+    <!-- 鼠标光晕 -->
+<div id="cursor-glow"></div>
 
     <!-- ===== 导航栏 ===== -->
     <nav class="navbar">
@@ -792,16 +881,15 @@
         板块四：小纸条
         ======================================== -->
         <section class="section">
-            <div class="section-title">📜 今日小纸条</div>
-
             <div class="note-area">
-                <div class="note-display" id="noteDisplay">
-                    <span class="quote-mark">「</span>
-                    点击下方按钮，捡一张小纸条
-                    <span class="quote-mark">」</span>
-                </div>
-                <button class="note-btn" id="noteBtn">✨ 捡一张</button>
-            </div>
+    <div class="note-display" id="noteDisplay">
+        <span class="quote-mark">「</span>
+        点击下方按钮，捡一张小纸条
+        <span class="quote-mark">」</span>
+    </div>
+    <span class="note-count" id="noteCount">📬 已捡 <span id="countNum">0</span> 张纸条</span>
+    <button class="note-btn" id="noteBtn">✨ 捡一张</button>
+</div>
         </section>
 
     </div>
@@ -1107,8 +1195,8 @@
         updateTime();
         setInterval(updateTime, 1000);
 
-        // ========================================
-        // 4. 小纸条
+                // ========================================
+        // 4. 小纸条（打字机效果）
         // ========================================
         var notes = [
             '极光会在最冷的夜里出现，就像温暖会在最静的时刻抵达。',
@@ -1123,14 +1211,39 @@
             '今晚的月亮很圆，像你写代码时专注的眼睛。'
         ];
 
-        var noteDisplay = document.getElementById('noteDisplay');
         var noteBtn = document.getElementById('noteBtn');
+        var noteDisplay = document.getElementById('noteDisplay');
+        var countNum = document.getElementById('countNum');
+        var isTyping = false;
 
         noteBtn.addEventListener('click', function() {
+            if (isTyping) return;
             var randomIndex = Math.floor(Math.random() * notes.length);
             var picked = notes[randomIndex];
-            noteDisplay.innerHTML = '<span class="quote-mark">「</span> ' + picked + ' <span class="quote-mark">」</span>';
+            var currentCount = parseInt(countNum.textContent) || 0;
+            countNum.textContent = currentCount + 1;
+            typeText(picked);
         });
+
+        function typeText(text) {
+            isTyping = true;
+            // 固定引号框架，中间留空
+            noteDisplay.innerHTML = '<span class="quote-mark">「</span><span class="quote-text"></span><span class="quote-mark">」</span>';
+            var textSpan = noteDisplay.querySelector('.quote-text');
+            var i = 0;
+
+            function typeChar() {
+                if (i < text.length) {
+                    textSpan.textContent += text[i];
+                    i++;
+                    setTimeout(typeChar, 45 + Math.random() * 20);
+                } else {
+                    isTyping = false;
+                }
+            }
+            typeChar();
+        }
+
 
         // ========================================
         // 5. 音量控制
@@ -1169,6 +1282,53 @@
                 high.setAttribute('d', 'M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z');
             }
         }
+        
+
+// ========================================
+// 彩蛋：生成漂浮星光
+// ========================================
+function createStars() {
+    var container = document.body;
+    for (var i = 0; i < 25; i++) {
+        var star = document.createElement('div');
+        star.className = 'star-particle';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.width = (Math.random() * 3 + 2) + 'px';
+        star.style.height = star.style.width;
+        star.style.animationDuration = (Math.random() * 8 + 6) + 's';
+        star.style.animationDelay = (Math.random() * 5) + 's';
+        star.style.opacity = Math.random() * 0.4 + 0.1;
+        container.appendChild(star);
+    }
+}
+createStars();
+
+// ========================================
+// 鼠标光晕（独立版本）
+// ========================================
+(function() {
+    var glow = document.getElementById('cursor-glow');
+    if (!glow) {
+        console.warn('找不到 #cursor-glow 元素');
+        return;
+    }
+    var isFirstMove = true;
+
+    document.addEventListener('mousemove', function(e) {
+        // 直接设置 left 和 top，不依赖任何其他变量
+        glow.style.left = e.clientX + 'px';
+        glow.style.top = e.clientY + 'px';
+        if (isFirstMove) {
+            console.log('鼠标光晕已激活');
+            isFirstMove = false;
+        }
+    });
+
+    // 如果鼠标从未移动，至少初始位置在屏幕中央（非必须）
+    glow.style.left = window.innerWidth / 2 + 'px';
+    glow.style.top = window.innerHeight / 2 + 'px';
+})();
     </script>
 
 </body>
