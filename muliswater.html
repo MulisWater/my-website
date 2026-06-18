@@ -626,7 +626,7 @@ function parseMarkdownFile(content, filename) {
         date: date,
         tags: tags,
         excerpt: excerpt,
-        content: body  // 保留原始 Markdown，稍后由 marked.js 渲染
+        content: htmlContent  // 使用 marked 解析后的 HTML
     };
 }
             
@@ -665,7 +665,7 @@ function filterPosts(tag) {
 
 var categoryList = document.getElementById('categoryList');
     var categoryLabel = document.getElementById('categoryLabel');
-    
+
 // 修改渲染函数，增加过滤参数
 function renderPosts(tag) {
     // 动态生成分类列表
