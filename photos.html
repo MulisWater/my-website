@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>阿水的照片墙</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        /* ===== 全局重置 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ===== 极光背景 ===== */
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(72, 255, 200, 0.30) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 20%, rgba(160, 120, 255, 0.35) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 80%, rgba(255, 180, 120, 0.30) 0%, transparent 50%),
+                radial-gradient(ellipse at 10% 90%, rgba(100, 220, 255, 0.25) 0%, transparent 45%),
+                linear-gradient(145deg, #0b2a35 0%, #1a3a45 40%, #2a4a4a 70%, #3a3a2a 100%);
+            font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 30px 20px 60px 20px;
+        }
+
+        /* ===== 导航栏 ===== */
+        .navbar {
+            max-width: 1000px;
+            margin: 0 auto 40px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 28px;
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(18px);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff4e6;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        .navbar .logo span {
+            color: #f9d976;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: rgba(255, 255, 240, 0.70);
+            font-weight: 500;
+            font-size: 15px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.10);
+            color: #fff4e6;
+        }
+
+        .nav-links a.active {
+            background: rgba(249, 217, 118, 0.20);
+            color: #f9d976;
+        }
+
+        /* ===== 页面标题 ===== */
+        .page-header {
+            max-width: 1000px;
+            margin: 0 auto 28px auto;
+            padding: 0 10px;
+        }
+
+        .page-header h1 {
+            font-size: 34px;
+            font-weight: 700;
+            color: #fff4e6;
+            letter-spacing: 2px;
+        }
+
+        .page-header p {
+            color: rgba(255, 255, 240, 0.50);
+            font-size: 15px;
+            font-weight: 300;
+            margin-top: 2px;
+        }
+
+        /* ===== 照片网格 ===== */
+        .photo-grid {
+    max-width: 1000px;
+    margin: 0 auto;
+    /* 删除原来的 display: grid 和 grid-template-columns */
+    column-count: 4;          /* 默认 4 列，铺满屏幕 */
+    column-gap: 20px;         /* 列间距 */
+}
+
+        /* ===== 单张照片卡片 ===== */
+        .photo-card {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    margin-bottom: 20px;      /* 卡片之间的垂直间距（替代 gap） */
+    break-inside: avoid;      /* 关键！防止图片在列中间被截断 */
+    /* 删除 aspect-ratio: 1 / 1; */
+}
+        .photo-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+            border-color: rgba(249, 217, 118, 0.25);
+        }
+
+        .photo-card img {
+    width: 100%;
+    height: auto;     /* 让高度随宽度自动缩放，保持宽高比 */
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+        .photo-card:hover img {
+            transform: scale(1.05);
+        }
+
+        /* 图片上的遮罩文字（鼠标悬停显示） */
+        .photo-card .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 16px 16px 16px;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.60) 0%, transparent 100%);
+            color: #fff4e6;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.4s ease;
+        }
+
+        .photo-card:hover .overlay {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .photo-card .overlay .photo-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .photo-card .overlay .photo-desc {
+            font-size: 12px;
+            font-weight: 300;
+            opacity: 0.70;
+            margin-top: 2px;
+        }
+
+        /* ===== Lightbox（点击放大的模态框） ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(16px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .lightbox img {
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.60);
+            object-fit: contain;
+        }
+
+        .lightbox .close-btn {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            font-size: 36px;
+            color: rgba(255, 255, 255, 0.50);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            font-family: inherit;
+        }
+
+        .lightbox .close-btn:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 12px;
+                padding: 14px 20px;
+                border-radius: 32px;
+            }
+            .nav-links {
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .nav-links a {
+                font-size: 14px;
+                padding: 4px 14px;
+            }
+            .page-header h1 {
+                font-size: 26px;
+            }
+            .photo-grid {
+                column-count: 3;      /* 平板用 3 列 */
+        column-gap: 14px;;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .photo-grid {
+                column-count: 2;      /* 手机用 2 列 */
+        column-gap: 10px;
+            }
+            .photo-card {
+                margin-bottom: 10px;
+    
+            }
+            .lightbox {
+                padding: 16px;
+            }
+            .lightbox .close-btn {
+                top: 16px;
+                right: 20px;
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 导航栏 ===== -->
+    <nav class="navbar">
+        <a href="index.html" class="logo">☀️ 阿水<span>的小窝</span></a>
+        <ul class="nav-links">
+            <li><a href="home.html">首页</a></li>
+            <li><a href="muliswater.html">文章</a></li>
+            <li><a href="photos.html" class="active">照片墙</a></li>
+        </ul>
+    </nav>
+
+    <!-- ===== 页面标题 ===== -->
+    <div class="page-header">
+        <h1>📸 照片墙</h1>
+        <p>一些值得被记住的瞬间</p>
+    </div>
+
+    <!-- ===== 照片网格 ===== -->
+    <div class="photo-grid" id="photoGrid">
+        <!-- 照片卡片会在 JS 里动态生成 -->
+    </div>
+
+    <!-- ===== Lightbox ===== -->
+    <div class="lightbox" id="lightbox">
+        <button class="close-btn" id="closeLightbox">✕</button>
+        <img id="lightboxImg" src="" alt="大图" />
+    </div>
+
+    <!-- ========================================
+    JavaScript
+    ======================================== -->
+    <script>
+        // ========================================
+        // 1. 照片数据
+        // ========================================
+        var photos = [
+            { src: 'photos/IMG20260529211151.jpg', title: '985', desc: '这也算是上985了' },
+            { src: 'photos/IMG20260616194855.jpg', title: '咖喱拌饭~', desc: '咖喱鸡排饭' },
+            { src: 'photos/IMG20260616195143.jpg', title:'酌星', desc: '便宜好吃' },
+        ];
+
+        // ========================================
+        // 2. 渲染照片墙
+        // ========================================
+        var grid = document.getElementById('photoGrid');
+
+        photos.forEach(function(photo) {
+            var card = document.createElement('div');
+            card.className = 'photo-card';
+
+            var img = document.createElement('img');
+            img.src = photo.src;
+            img.alt = photo.title;
+            img.loading = 'lazy';
+
+            var overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = '<div class="photo-title">' + photo.title + '</div><div class="photo-desc">' + photo.desc + '</div>';
+
+            card.appendChild(img);
+            card.appendChild(overlay);
+
+            // 点击卡片 → 打开 Lightbox
+            card.addEventListener('click', function() {
+                openLightbox(photo.src, photo.title);
+            });
+
+            grid.appendChild(card);
+        });
+
+        // ========================================
+        // 3. Lightbox（大图预览）
+        // ========================================
+        var lightbox = document.getElementById('lightbox');
+        var lightboxImg = document.getElementById('lightboxImg');
+        var closeBtn = document.getElementById('closeLightbox');
+
+        function openLightbox(src, title) {
+            lightboxImg.src = src;
+            lightboxImg.alt = title || '';
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; // 禁止滚动
+        }
+
+        function closeLightboxFn() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = ''; // 恢复滚动
+        }
+
+        closeBtn.addEventListener('click', closeLightboxFn);
+
+        // 点击背景（灰色区域）也关闭
+        lightbox.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLightboxFn();
+            }
+        });
+
+        // ESC 键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightboxFn();
+            }
+        });
+    </script>
+
+</body>
+</html>
