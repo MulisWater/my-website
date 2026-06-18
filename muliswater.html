@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>阿水的文章</title>
@@ -235,6 +236,8 @@
         grid-template-columns: 1fr;
     }
 }
+
+
 
         /* ===== 文章网格 ===== */
         .post-grid {
@@ -534,25 +537,33 @@ var posts = [];
 var currentCategory = 'all';
 
 function loadPosts() {
-    // 使用 GitHub API 获取 _posts 文件夹的文件列表
+    var grid = document.getElementById('postGrid');
+    grid.innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.5);padding:40px;">📥 正在加载文章...</div>';
+
+    // 步骤1：获取 _posts 文件夹的文件列表
     fetch('https://api.github.com/repos/MulisWater/my-website/contents/_posts')
         .then(function(response) {
-            if (!response.ok) throw new Error('无法获取文章列表');
+            if (!response.ok) {
+                throw new Error('GitHub API 返回错误: ' + response.status);
+            }
             return response.json();
         })
-        .then(function(files) {
-            // 过滤出 .md 文件，并按文件名排序（最新的在前）
-            var mdFiles = files
-                .filter(function(file) { return file.name.endsWith('.md'); })
-                .sort(function(a, b) { return b.name.localeCompare(a.name); });
-            
+        .then(function(data) {
+            console.log('获取到的文件列表:', data); // 调试日志
+            // 过滤出 .md 文件
+            var mdFiles = data.filter(function(file) {
+                return file.name.endsWith('.md');
+            });
             if (mdFiles.length === 0) {
-                document.getElementById('postGrid').innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.3);padding:40px;">📭 还没有文章</div>';
-                return;
+                throw new Error('没有找到 .md 文件');
             }
+            // 按文件名排序（最新的在前）
+            mdFiles.sort(function(a, b) {
+                return b.name.localeCompare(a.name);
+            });
             
-            // 逐个读取每个 .md 文件的内容
-            var fetchPromises = mdFiles.map(function(file) {
+            // 步骤2：读取每个文件的内容
+            var promises = mdFiles.map(function(file) {
                 return fetch(file.download_url)
                     .then(function(res) { return res.text(); })
                     .then(function(content) {
@@ -560,19 +571,63 @@ function loadPosts() {
                     });
             });
             
-            return Promise.all(fetchPromises);
+            return Promise.all(promises);
         })
         .then(function(posts) {
-            if (!posts) return;
-            // 存储到全局变量并渲染
+            console.log('解析后的文章列表:', posts); // 调试日志
             window.posts = posts;
             renderPosts('all');
         })
         .catch(function(error) {
-            console.error('加载文章失败:', error);
-            document.getElementById('postGrid').innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.3);padding:40px;">⚠️ 加载失败，请检查网络</div>';
+            console.error('加载失败:', error);
+            grid.innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.3);padding:40px;">⚠️ 加载失败：' + error.message + '</div>';
         });
 }
+
+// 解析 Markdown 文件（包含 Front Matter）
+function parseMarkdownFile(content, filename) {
+    var title = filename.replace(/\.md$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, '');
+    var date = filename.substring(0, 10);
+    var tags = ['未分类'];
+    var excerpt = '';
+    var body = content;
+    
+    // 尝试解析 Front Matter（--- 包裹的部分）
+    var match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    if (match) {
+        var yaml = match[1];
+        body = match[2];
+        // 简单解析 title 和 date
+        var lines = yaml.split('\n');
+        lines.forEach(function(line) {
+            var colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                var key = line.substring(0, colonIndex).trim();
+                var value = line.substring(colonIndex + 1).trim();
+                if (key === 'title') title = value;
+                if (key === 'date') date = value;
+                if (key === 'tags') {
+                    tags = value.split(',').map(function(t) { return t.trim(); });
+                }
+            }
+        });
+    }
+    
+    // 生成摘要（取正文前60个字符）
+    var plainText = body.replace(/\n/g, ' ').replace(/#/g, '');
+    excerpt = plainText.substring(0, 60) + (plainText.length > 60 ? '...' : '');
+    
+    return {
+        id: Date.now() + Math.random(),
+        title: title,
+        date: date,
+        tags: tags,
+        excerpt: excerpt,
+        content: body  // 保留原始 Markdown，稍后由 marked.js 渲染
+    };
+}
+            
+            
 
 function parseMarkdownFile(content, filename) {
     // 解析 front matter（--- 包裹的部分）
