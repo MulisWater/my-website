@@ -5,9 +5,6 @@ backend:
 
 media_folder: "static/images"
 public_folder: "/static/images"
-media_library:
-  name: "default"
-  config: {}
 
 collections:
   - name: "posts"
