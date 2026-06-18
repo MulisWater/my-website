@@ -2,10 +2,20 @@ backend:
   name: git-gateway
   branch: main
 
+media_folder: "images/uploads"
+media_library:
+  name: uploadcare
+  config:
+    publicKey: "demopublickey"
+
 collections:
-  - name: "test"
-    label: "测试"
-    folder: "_test"
+  - name: "posts"
+    label: "文章管理"
+    label_singular: "文章"
+    folder: "_posts"
     create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - {label: "标题", name: "title", widget: "string"}
+      - {label: "发布日期", name: "date", widget: "datetime"}
+      - {label: "正文", name: "body", widget: "markdown"}
