@@ -5,10 +5,6 @@ backend:
 
 media_folder: "static/images"
 public_folder: "/static/images"
-media_library:
-  name: uploadcare
-  config:
-    publicKey: "demopublickey"
 
 collections:
   - name: "posts"
@@ -22,6 +18,9 @@ collections:
             name: "body"
             widget: "list"
             fields:
+              - {label: "ID", name: "id", widget: "number", default: 1, value_type: "int"}
               - {label: "标题", name: "title", widget: "string"}
-              - {label: "日期", name: "date", widget: "datetime"}
+              - {label: "日期", name: "date", widget: "datetime", format: "YYYY-MM-DD"}
+              - {label: "标签", name: "tags", widget: "list", default: ["生活"]}
+              - {label: "摘要", name: "excerpt", widget: "text"}
               - {label: "正文", name: "content", widget: "text"}
