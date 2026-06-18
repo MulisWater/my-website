@@ -540,41 +540,21 @@ function loadPosts() {
     var grid = document.getElementById('postGrid');
     grid.innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.5);padding:40px;">📥 正在加载文章...</div>';
 
-    // 步骤1：获取 _posts 文件夹的文件列表
-    fetch('https://api.github.com/repos/MulisWater/my-website/contents/_posts')
-        .then(function(response) {
-            if (!response.ok) {
-                throw new Error('GitHub API 返回错误: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(function(data) {
-            console.log('获取到的文件列表:', data); // 调试日志
-            // 过滤出 .md 文件
-            var mdFiles = data.filter(function(file) {
-                return file.name.endsWith('.md');
-            });
-            if (mdFiles.length === 0) {
-                throw new Error('没有找到 .md 文件');
-            }
-            // 按文件名排序（最新的在前）
-            mdFiles.sort(function(a, b) {
-                return b.name.localeCompare(a.name);
-            });
-            
-            // 步骤2：读取每个文件的内容
-            var promises = mdFiles.map(function(file) {
-                return fetch(file.download_url)
+    // 第一步：读取索引
+    fetch('posts-index.json')
+        .then(function(res) { return res.json(); })
+        .then(function(filenames) {
+            // 第二步：读取每个 .md 文件
+            var promises = filenames.map(function(name) {
+                return fetch('posts/' + name)
                     .then(function(res) { return res.text(); })
                     .then(function(content) {
-                        return parseMarkdownFile(content, file.name);
+                        return parseMarkdownFile(content, name);
                     });
             });
-            
             return Promise.all(promises);
         })
         .then(function(posts) {
-            console.log('解析后的文章列表:', posts); // 调试日志
             window.posts = posts;
             renderPosts('all');
         })
