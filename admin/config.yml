@@ -17,6 +17,7 @@ collections:
           - label: "文章列表"
             name: "body"
             widget: "list"
+            summary: "{{fields.title}} ({{fields.date}})"
             fields:
               - {label: "ID", name: "id", widget: "number", default: 1, value_type: "int"}
               - {label: "标题", name: "title", widget: "string"}
