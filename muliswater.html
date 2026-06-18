@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>阿水的文章</title>
@@ -533,22 +534,82 @@ var posts = [];
 var currentCategory = 'all';
 
 function loadPosts() {
-    fetch('posts.json')
+    // 使用 GitHub API 获取 _posts 文件夹的文件列表
+    fetch('https://api.github.com/repos/MulisWater/my-website/contents/_posts')
         .then(function(response) {
+            if (!response.ok) throw new Error('无法获取文章列表');
             return response.json();
         })
-        .then(function(data) {
-            posts = data;
-            // 数据加载完成后，初始化分类和渲染
+        .then(function(files) {
+            // 过滤出 .md 文件，并按文件名排序（最新的在前）
+            var mdFiles = files
+                .filter(function(file) { return file.name.endsWith('.md'); })
+                .sort(function(a, b) { return b.name.localeCompare(a.name); });
             
+            if (mdFiles.length === 0) {
+                document.getElementById('postGrid').innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.3);padding:40px;">📭 还没有文章</div>';
+                return;
+            }
+            
+            // 逐个读取每个 .md 文件的内容
+            var fetchPromises = mdFiles.map(function(file) {
+                return fetch(file.download_url)
+                    .then(function(res) { return res.text(); })
+                    .then(function(content) {
+                        return parseMarkdownFile(content, file.name);
+                    });
+            });
+            
+            return Promise.all(fetchPromises);
+        })
+        .then(function(posts) {
+            if (!posts) return;
+            // 存储到全局变量并渲染
+            window.posts = posts;
             renderPosts('all');
         })
         .catch(function(error) {
-            console.error('加载 posts.json 失败:', error);
-            // 如果 JSON 加载失败，显示提示
-            document.getElementById('postGrid').innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.3);padding:40px;">⚠️ 数据加载失败，请检查 posts.json 文件</div>';
+            console.error('加载文章失败:', error);
+            document.getElementById('postGrid').innerHTML = '<div style="text-align:center;color:rgba(255,255,240,0.3);padding:40px;">⚠️ 加载失败，请检查网络</div>';
         });
-};
+}
+
+function parseMarkdownFile(content, filename) {
+    // 解析 front matter（--- 包裹的部分）
+    var frontMatter = {};
+    var body = content;
+    var match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    
+    if (match) {
+        // 解析 YAML 格式的 front matter
+        var yamlLines = match[1].split('\n');
+        yamlLines.forEach(function(line) {
+            var colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                var key = line.substring(0, colonIndex).trim();
+                var value = line.substring(colonIndex + 1).trim();
+                frontMatter[key] = value;
+            }
+        });
+        body = match[2].trim();
+    }
+    
+    // 从文件名提取日期（如果 front matter 没有日期）
+    var date = frontMatter.date || filename.substring(0, 10);
+    
+    // 用 marked 解析 Markdown 为 HTML
+    var htmlContent = marked.parse(body);
+    
+    return {
+        id: Date.now() + Math.random(),
+        title: frontMatter.title || filename.replace(/\.md$/, ''),
+        date: date,
+        tags: frontMatter.tags ? frontMatter.tags.split(',').map(function(t) { return t.trim(); }) : ['未分类'],
+        excerpt: frontMatter.excerpt || body.substring(0, 60).replace(/\n/g, ' ') + '...',
+        content: htmlContent,
+        rawContent: body
+    };
+}
         var grid = document.getElementById('postGrid');
 
         // ========================================
@@ -619,7 +680,7 @@ function filterPosts(tag) {
 
 // 修改渲染函数，增加过滤参数
 function renderPosts(tag) {
-    var filtered = posts;
+    var filtered = window.posts;
     if (tag && tag !== 'all') {
         filtered = posts.filter(function(p) {
             return p.tags.indexOf(tag) !== -1;
@@ -677,7 +738,7 @@ loadPosts();
             detailDate.textContent = post.date;
             detailTitle.textContent = post.title;
             detailTags.innerHTML = post.tags.map(function(t) { return '<span>' + t + '</span>'; }).join('');
-            detailContent.textContent = post.content;
+            detailContent.innerHTML = post.content;
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
